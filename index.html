@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>سؤال مهم 😏</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100dvh;
+      background: #FDE8F0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+      direction: rtl;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100dvh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── Question Screen ── */
+    #question-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.3s ease;
+    }
+
+    #question-text {
+      font-size: clamp(20px, 5vw, 26px);
+      font-weight: 700;
+      color: #7a3050;
+      text-align: center;
+      padding: 0 2rem;
+      line-height: 1.6;
+      margin-bottom: 2.8rem;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 14px 44px;
+      border: none;
+      border-radius: 50px;
+      font-size: 19px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    #yes-btn {
+      background: #C8688C;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(200, 104, 140, 0.38);
+      position: relative;
+      z-index: 5;
+      transition: transform 0.1s ease;
+    }
+    #yes-btn:active { transform: scale(0.95); }
+
+    #no-btn {
+      background: #fff;
+      color: #C8688C;
+      border: 2px solid #C8688C;
+      position: absolute;
+      z-index: 5;
+      transition:
+        left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+        top  0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── Result Screen ── */
+    #result-screen {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+    }
+    #result-screen.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    #result-text {
+      font-size: clamp(24px, 6vw, 32px);
+      font-weight: 700;
+      color: #7a3050;
+      text-align: center;
+      animation: fadeUp 0.5s ease forwards;
+    }
+
+    /* ── Ripple ── */
+    #ripple-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(200, 104, 140, 0.22);
+      animation: rippleAnim 0.5s ease-out forwards;
+      pointer-events: none;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes rippleAnim {
+      from { transform: scale(0); opacity: 1; }
+      to   { transform: scale(4); opacity: 0; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="ripple-layer"></div>
+
+  <!-- Question -->
+  <div id="question-screen">
+    <p id="question-text">هل ترين حازم جميلاً؟ 😏</p>
+    <button class="btn" id="yes-btn">نعم</button>
+    <button class="btn" id="no-btn">لا</button>
+  </div>
+
+  <!-- Result -->
+  <div id="result-screen">
+    <p id="result-text">اجابة متوقعة 😌</p>
+  </div>
+</div>
+
+<script>
+  const app             = document.getElementById('app');
+  const questionScreen  = document.getElementById('question-screen');
+  const resultScreen    = document.getElementById('result-screen');
+  const noBtn           = document.getElementById('no-btn');
+  const yesBtn          = document.getElementById('yes-btn');
+  const rippleLayer     = document.getElementById('ripple-layer');
+
+  const BTN_W  = 110;
+  const BTN_H  = 52;
+  const MARGIN = 18;
+
+  /* Place "No" button below "Yes" initially */
+  function placeInitial() {
+    const w = app.offsetWidth;
+    const h = app.offsetHeight;
+    noBtn.style.left = (w / 2 - BTN_W / 2) + 'px';
+    noBtn.style.top  = (h * 0.62) + 'px';
+  }
+
+  /* Random safe position */
+  function randomPos() {
+    const w = app.offsetWidth;
+    const h = app.offsetHeight;
+    return {
+      x: Math.random() * (w - BTN_W  - MARGIN * 2) + MARGIN,
+      y: Math.random() * (h - BTN_H  - MARGIN * 2) + MARGIN
+    };
+  }
+
+  /* Jump "No" button away */
+  function jumpAway(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.vibrate) navigator.vibrate(25);
+    const { x, y } = randomPos();
+    noBtn.style.left = x + 'px';
+    noBtn.style.top  = y + 'px';
+  }
+
+  /* Ripple effect */
+  function spawnRipple(x, y) {
+    const size = 70;
+    const el = document.createElement('div');
+    el.className = 'ripple';
+    el.style.cssText = `width:${size}px;height:${size}px;left:${x - size/2}px;top:${y - size/2}px`;
+    rippleLayer.appendChild(el);
+    setTimeout(() => el.remove(), 500);
+  }
+
+  /* Yes: show result */
+  yesBtn.addEventListener('click', function(e) {
+    const r  = yesBtn.getBoundingClientRect();
+    const ar = app.getBoundingClientRect();
+    spawnRipple(r.left - ar.left + r.width / 2, r.top - ar.top + r.height / 2);
+
+    questionScreen.style.opacity = '0';
+    setTimeout(() => {
+      questionScreen.style.display = 'none';
+      resultScreen.classList.add('show');
+    }, 300);
+  });
+
+  /* No: escape on both touch and mouse */
+  noBtn.addEventListener('touchstart', jumpAway, { passive: false });
+  noBtn.addEventListener('mouseenter', jumpAway);
+  noBtn.addEventListener('mousedown',  jumpAway);
+
+  /* Init */
+  placeInitial();
+  window.addEventListener('resize', placeInitial);
+</script>
+</body>
+</html>
